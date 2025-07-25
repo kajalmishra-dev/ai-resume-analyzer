@@ -1,0 +1,8 @@
+streamlit>=1.32
+pymupdf
+langchain-core>=0.2
+langchain>=0.2
+langchain-community>=0.3      # vectorstores, loaders
+langchain-openai>=0.1          # ChatOpenAI, OpenAIEmbeddings
+chromadb>=0.5                  # if you use Chroma
+openai>=1.6.1
