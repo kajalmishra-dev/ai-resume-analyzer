@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.env
+.streamlit/secrets.toml
+.chroma/
+*.onnx
+.cache/
+chroma/
+.DS_Store
+Thumbs.db

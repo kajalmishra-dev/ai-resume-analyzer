@@ -1,49 +1,69 @@
 import os
 import re
-import fitz  # PyMuPDF
+import pymupdf
 import streamlit as st
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.schema import Document
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_openai import ChatOpenAI
 
-st.sidebar.header("🔐 OpenAI API Key")
-openai_api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+st.set_page_config(page_title="Smart Resume Chatbot", layout="wide")
 
-if not openai_api_key:
-    st.warning("Please enter your OpenAI API key to continue.")
-    st.stop()
+st.sidebar.header("🔐 OpenAI API Key (optional)")
+st.sidebar.caption(
+    "A valid key enables AI answers. Without one, the app still extracts the PDF "
+    "and scores job match with keyword overlap."
+)
+openai_api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password").strip()
+if openai_api_key:
+    os.environ["OPENAI_API_KEY"] = openai_api_key
 
-os.environ["OPENAI_API_KEY"] = openai_api_key
 
 def extract_text_from_pdf(pdf_bytes):
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    text = "\n".join(page.get_text() for page in doc)
-    return text
+    doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    return "\n".join(page.get_text() for page in doc)
 
-def build_vectorstore(text):
-    splitter = CharacterTextSplitter(chunk_size=800, chunk_overlap=100)
-    texts = splitter.split_text(text)
-    docs = [Document(page_content=t) for t in texts]
-    embeddings = OpenAIEmbeddings()
-    vectordb = Chroma.from_documents(docs, embedding=embeddings)
-    return vectordb
 
-def create_chatbot_chain(vectordb):
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    retriever = vectordb.as_retriever(search_kwargs={"k": 3})
-    llm = ChatOpenAI(temperature=0)
-    return ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory)
+def words(text):
+    return set(re.findall(r"[a-zA-Z][a-zA-Z0-9+#.]{1,}", text.lower()))
 
-def score_resume_match(resume_text, job_description):
-    llm = ChatOpenAI(temperature=0)
-    prompt_template = """
+
+def relevant_chunks(resume_text, question, k=4):
+    parts = [p.strip() for p in re.split(r"\n\s*\n", resume_text) if p.strip()]
+    if not parts:
+        parts = [resume_text[i : i + 800] for i in range(0, len(resume_text), 700)]
+    query = words(question)
+    ranked = sorted(
+        parts,
+        key=lambda chunk: len(query & words(chunk)),
+        reverse=True,
+    )
+    return ranked[:k] or parts[:k]
+
+
+def keyword_job_match(resume_text, job_description):
+    stop = {
+        "and", "the", "for", "with", "that", "this", "from", "your", "you",
+        "are", "will", "have", "has", "our", "job", "role", "team",
+    }
+    jd = words(job_description) - stop
+    rs = words(resume_text) - stop
+    matched = sorted(jd & rs)
+    missing = sorted(jd - rs)
+    percent = int(round(100 * len(matched) / len(jd))) if jd else 0
+    return percent, matched, missing
+
+
+def ask_with_openai(resume_text, question):
+    llm = ChatOpenAI(api_key=openai_api_key, temperature=0)
+    context = "\n\n".join(relevant_chunks(resume_text, question))
+    prompt = (
+        "You are a resume assistant. Answer using only this resume context.\n\n"
+        f"{context}\n\nQuestion: {question}"
+    )
+    return llm.invoke(prompt).content
+
+
+def score_with_openai(resume_text, job_description):
+    llm = ChatOpenAI(api_key=openai_api_key, temperature=0)
+    prompt = f"""
 Compare the following resume and job description.
 
 Resume:
@@ -59,58 +79,84 @@ Respond with:
 - Missing Skills: ...
 - Summary: ...
 """
-    prompt = PromptTemplate(
-        input_variables=["resume_text", "job_description"],
-        template=prompt_template
-    )
-    formatted_prompt = prompt.format(resume_text=resume_text, job_description=job_description)
-    response = llm.call_as_llm(formatted_prompt)
-    return response
+    return llm.invoke(prompt).content
 
-st.set_page_config(page_title="Smart Resume Chatbot", layout="wide")
+
 st.title("🤖 Chat with Your Resume + Job Fit Analysis")
 
 uploaded_file = st.file_uploader("📄 Upload Your Resume (PDF)", type="pdf")
 
-if uploaded_file:
-    pdf_bytes = uploaded_file.read()
+if not uploaded_file:
+    st.info("Upload a PDF resume to continue.")
+    st.stop()
+
+file_id = f"{uploaded_file.name}-{uploaded_file.size}"
+if st.session_state.get("resume_file_id") != file_id:
+    pdf_bytes = uploaded_file.getvalue()
     resume_text = extract_text_from_pdf(pdf_bytes)
-    vectordb = build_vectorstore(resume_text)
-    chatbot_chain = create_chatbot_chain(vectordb)
-    st.success("✅ Resume processed!")
+    if not resume_text.strip():
+        st.error("Could not read text from this PDF. Use a text-based PDF, not a scanned image.")
+        st.stop()
+    st.session_state.resume_file_id = file_id
+    st.session_state.resume_text = resume_text
 
-    tab1, tab2 = st.tabs(["💬 Chat with Resume", "📄 Job Match Dashboard"])
+resume_text = st.session_state.resume_text
+st.success("✅ Resume processed!")
 
-    with tab1:
-        user_question = st.text_input("Ask a question about your resume:")
-        if user_question:
-            response = chatbot_chain.run(user_question)
-            st.markdown(f"**AI:** {response}")
+tab1, tab2 = st.tabs(["💬 Chat with Resume", "📄 Job Match Dashboard"])
 
-    with tab2:
-        st.subheader("🔎 Paste a Job Description Below")
-        job_desc = st.text_area("Job Description", height=200)
+with tab1:
+    user_question = st.text_input("Ask a question about your resume:")
+    if user_question:
+        if openai_api_key:
+            try:
+                response = ask_with_openai(resume_text, user_question)
+            except Exception as exc:
+                st.warning(
+                    "OpenAI could not answer (invalid key or billing). Showing local excerpts instead."
+                )
+                st.caption(str(exc)[:300])
+                response = "\n\n".join(relevant_chunks(resume_text, user_question))
+        else:
+            response = "\n\n".join(relevant_chunks(resume_text, user_question))
+        st.markdown(f"**Answer:**\n\n{response}")
 
-        if job_desc:
-            with st.spinner("Analyzing match..."):
-                result = score_resume_match(resume_text, job_desc)
+with tab2:
+    st.subheader("🔎 Paste a Job Description Below")
+    job_desc = st.text_area("Job Description", height=200)
 
-            match_pct = re.search(r"Match %: (\d+)", result)
-            percent = int(match_pct.group(1)) if match_pct else 0
+    if job_desc:
+        percent, matched, missing = keyword_job_match(resume_text, job_desc)
+        summary = "Keyword overlap between the job description and resume."
 
-            matched = re.search(r"Matched Skills: (.+)", result)
-            missing = re.search(r"Missing Skills: (.+)", result)
-            summary = re.search(r"Summary: (.+)", result)
+        if openai_api_key:
+            try:
+                result = score_with_openai(resume_text, job_desc)
+                match_pct = re.search(r"Match %:\s*(\d+)", result)
+                if match_pct:
+                    percent = int(match_pct.group(1))
+                m = re.search(r"Matched Skills:\s*(.+)", result)
+                miss = re.search(r"Missing Skills:\s*(.+)", result)
+                summ = re.search(r"Summary:\s*(.+)", result)
+                if m:
+                    matched = [item.strip() for item in m.group(1).split(",") if item.strip()]
+                if miss:
+                    missing = [item.strip() for item in miss.group(1).split(",") if item.strip()]
+                if summ:
+                    summary = summ.group(1)
+            except Exception as exc:
+                st.warning("OpenAI job-match failed; showing keyword score instead.")
+                st.caption(str(exc)[:300])
 
-            st.subheader("📊 Match Score")
-            st.progress(percent / 100)
-            st.metric("Match %", f"{percent}%")
+        st.subheader("📊 Match Score")
+        st.progress(min(max(percent, 0), 100) / 100)
+        st.metric("Match %", f"{percent}%")
 
-            st.subheader("✅ Matched Skills")
-            st.write(matched.group(1) if matched else "Not found")
+        st.subheader("✅ Matched Skills")
+        st.write(", ".join(matched[:40]) if matched else "Not found")
 
-            st.subheader("❌ Missing Skills")
-            st.write(missing.group(1) if missing else "None")
+        st.subheader("❌ Missing Skills")
+        st.write(", ".join(missing[:40]) if missing else "None")
 
-            st.subheader("🧠 Summary")
-            st.write(summary.group(1) if summary else "Not available")
+        st.subheader("🧠 Summary")
+        st.write(summary)
