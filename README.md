@@ -1,74 +1,40 @@
 ﻿# Resume Analyzer
 
-A small Streamlit app that reads your resume and tells you how it looks for ATS-style checks, skills, and a job description.
+Upload a resume, get ATS-style scores, skill gaps, and job match — no API key needed for the basics.
 
-You can upload a PDF, DOCX, or TXT. It scores the resume, lists likely skills, shows what might be missing vs a JD, and lets you download a short report. OpenAI is optional. The basic analysis works without a key.
-
-**Live demo:** _Add your Streamlit Cloud link here after deploy_
+**[Try it live →](https://ai-resume-analyzer-29.streamlit.app/)**
 
 ## What it does
 
-- Pulls text and contact details from the file
-- Scores completeness, impact, and ATS-style readiness
-- Picks skills from a built-in list
-- Compares the resume to a pasted job description
-- Optional: AI coaching, a rewritten summary, and Q&A
+- Parses PDF, DOCX, or TXT resumes
+- Scores completeness, impact, and ATS readiness
+- Matches your resume against a pasted job description
+- Lets you download a short analysis report
+- Optional OpenAI key for coaching, rewrite, and Q&A
 
-## Screenshots
-
-_Add images to `docs/` and uncomment below:_
-
-<!--
-![Overview](docs/overview.png)
-![Job match](docs/job-match.png)
--->
-
-## Run it
+## Quick start
 
 ```bash
 git clone https://github.com/kajalmishra-dev/ai-resume-analyzer.git
 cd ai-resume-analyzer
 python -m venv .venv
-```
-
-Windows:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m streamlit run app.py --server.port 8503
+streamlit run app.py
 ```
 
-Mac / Linux:
-
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m streamlit run app.py --server.port 8503
-```
-
-Then open http://localhost:8503
+Open `http://localhost:8501`
 
 ## Tests
 
-```powershell
+```bash
 pip install pytest
 pytest tests/ -v
 ```
 
-## Deploy (Streamlit Cloud)
+## Stack
 
-1. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
-2. New app → repo `kajalmishra-dev/ai-resume-analyzer`, main file `app.py`.
-3. Deploy. Optional: add `OPENAI_API_KEY` under **Secrets** for AI features.
+Python · Streamlit · PyMuPDF · python-docx
 
-## How to use it
+## License
 
-1. Upload a resume (max 8 MB).
-2. Paste a job description if you want a match score.
-3. Check the tabs and download the report if you need it.
-4. Add an OpenAI key in the sidebar only if you want the AI bits.
-
-## Notes
-
-Scoring is rule-based, not a trained model. Scanned PDFs often fail. Skills that are not in the list may be missed. Don’t commit API keys — `.env` is ignored.
+Portfolio / learning project. Use freely.
