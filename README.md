@@ -4,6 +4,8 @@ A small Streamlit app that reads your resume and tells you how it looks for ATS-
 
 You can upload a PDF, DOCX, or TXT. It scores the resume, lists likely skills, shows what might be missing vs a JD, and lets you download a short report. OpenAI is optional. The basic analysis works without a key.
 
+**Live demo:** _Add your Streamlit Cloud link here after deploy_
+
 ## What it does
 
 - Pulls text and contact details from the file
@@ -11,6 +13,15 @@ You can upload a PDF, DOCX, or TXT. It scores the resume, lists likely skills, s
 - Picks skills from a built-in list
 - Compares the resume to a pasted job description
 - Optional: AI coaching, a rewritten summary, and Q&A
+
+## Screenshots
+
+_Add images to `docs/` and uncomment below:_
+
+<!--
+![Overview](docs/overview.png)
+![Job match](docs/job-match.png)
+-->
 
 ## Run it
 
@@ -37,6 +48,19 @@ python -m streamlit run app.py --server.port 8503
 ```
 
 Then open http://localhost:8503
+
+## Tests
+
+```powershell
+pip install pytest
+pytest tests/ -v
+```
+
+## Deploy (Streamlit Cloud)
+
+1. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
+2. New app → repo `kajalmishra-dev/ai-resume-analyzer`, main file `app.py`.
+3. Deploy. Optional: add `OPENAI_API_KEY` under **Secrets** for AI features.
 
 ## How to use it
 
