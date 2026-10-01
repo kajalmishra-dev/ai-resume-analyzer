@@ -26,6 +26,12 @@ def test_extract_skills():
     assert "aws" in skills
 
 
+def test_extract_skills_avoids_substrings():
+    skills = extract_skills("We need a good capital plan and a reliable workflow.")
+    assert "go" not in skills
+    assert "api" not in skills
+
+
 def test_score_resume_in_range():
     parsed = parse_resume("r.txt", SAMPLE)
     scores = score_resume(parsed)
