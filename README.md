@@ -69,7 +69,7 @@ Then open `http://localhost:8501`.
 
 The core analyzer does not require an API key. To enable coaching, summary rewriting, and Q&A, provide an OpenAI API key in the sidebar.
 
-For local environment configuration, copy `.env.example` to `.env` if you use an environment loader in your own workflow. The application currently accepts the key through the Streamlit sidebar.
+The application accepts the API key through the Streamlit sidebar and does not require local environment configuration.
 
 ## Quality checks
 
