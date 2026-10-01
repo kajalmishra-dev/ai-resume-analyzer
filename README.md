@@ -1,40 +1,93 @@
-﻿# Resume Analyzer
+# AI Resume Analyzer
 
-Upload a resume, get ATS-style scores, skill gaps, and job match — no API key needed for the basics.
+A Streamlit application that analyzes resumes for ATS readiness, completeness, impact, skills, and job-description fit.
 
-**[Try it live →](https://ai-resume-analyzer-29.streamlit.app/)**
+**Live demo:** https://ai-resume-analyzer-29.streamlit.app/
 
-## What it does
+## Features
 
-- Parses PDF, DOCX, or TXT resumes
-- Scores completeness, impact, and ATS readiness
-- Matches your resume against a pasted job description
-- Lets you download a short analysis report
-- Optional OpenAI key for coaching, rewrite, and Q&A
+- Parse PDF, DOCX, and TXT resumes.
+- Extract contact details, sections, skills, and resume signals.
+- Calculate ATS-readiness, completeness, and impact scores.
+- Compare a resume with a pasted job description.
+- Generate a downloadable Markdown analysis report.
+- Optionally use an OpenAI API key for resume coaching, summary rewriting, and resume Q&A.
+- Run the core analysis locally without an API key.
 
-## Quick start
+## Project structure
+
+```text
+.
+├── app.py                 # Streamlit entry point
+├── src/
+│   ├── analysis.py        # Scoring, skill extraction, and job matching
+│   ├── llm.py             # Optional LLM-powered features
+│   ├── parser.py          # Resume parsing and metadata extraction
+│   └── skills.py          # Skill catalog and tokenization stopwords
+├── tests/                 # Automated tests
+├── .streamlit/            # Streamlit configuration
+├── .devcontainer/         # Dev Container configuration
+└── requirements*.txt      # Runtime and development dependencies
+```
+
+## Local development
+
+### 1. Create an environment
 
 ```bash
-git clone https://github.com/kajalmishra-dev/ai-resume-analyzer.git
-cd ai-resume-analyzer
 python -m venv .venv
-pip install -r requirements.txt
+```
+
+Activate it:
+
+**macOS/Linux**
+```bash
+source .venv/bin/activate
+```
+
+**Windows**
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+### 2. Install dependencies
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
+```
+
+### 3. Run the application
+
+```bash
 streamlit run app.py
 ```
 
-Open `http://localhost:8501`
+Then open `http://localhost:8501`.
 
-## Tests
+### Optional AI features
+
+The core analyzer does not require an API key. To enable coaching, summary rewriting, and Q&A, provide an OpenAI API key in the sidebar.
+
+For local environment configuration, copy `.env.example` to `.env` if you use an environment loader in your own workflow. The application currently accepts the key through the Streamlit sidebar.
+
+## Quality checks
+
+Run the same checks used by CI:
 
 ```bash
-pip install pytest
-pytest tests/ -v
+ruff check .
+pytest -v
 ```
 
-## Stack
+## Supported resume formats
 
-Python · Streamlit · PyMuPDF · python-docx
+- PDF
+- DOCX
+- TXT
 
-## License
+Uploads are limited to 8 MB.
 
-Portfolio / learning project. Use freely.
+## Notes
+
+The scoring system is heuristic and intended to provide practical resume feedback rather than replace recruiter or hiring decisions.
