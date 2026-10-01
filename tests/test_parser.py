@@ -32,9 +32,9 @@ def test_parse_contact_and_sections():
     assert parsed.quantified_bullets >= 1
 
 
+import pytest
+
+
 def test_empty_file_raises():
-    try:
+    with pytest.raises(ValueError, match="extractable text"):
         parse_resume("empty.txt", b"   ")
-        assert False, "expected ValueError"
-    except ValueError as exc:
-        assert "extractable text" in str(exc).lower()
