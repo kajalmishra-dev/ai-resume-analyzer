@@ -1,3 +1,5 @@
+import pytest
+
 from src.parser import parse_resume
 
 
@@ -33,8 +35,5 @@ def test_parse_contact_and_sections():
 
 
 def test_empty_file_raises():
-    try:
+    with pytest.raises(ValueError, match="extractable text"):
         parse_resume("empty.txt", b"   ")
-        assert False, "expected ValueError"
-    except ValueError as exc:
-        assert "extractable text" in str(exc).lower()

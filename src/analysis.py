@@ -17,20 +17,22 @@ class ScoreBreakdown:
 
 
 def tokenize(text: str) -> set[str]:
-    return {w for w in re.findall(r"[a-zA-Z][a-zA-Z0-9+#.]{1,}", text.lower()) if w not in STOPWORDS}
+    return {
+        word
+        for word in re.findall(r"[a-zA-Z][a-zA-Z0-9+#.]{1,}", text.lower())
+        if word not in STOPWORDS
+    }
+
+
+def _contains_skill(text: str, skill: str) -> bool:
+    """Match skills as standalone terms without substring false positives."""
+    pattern = rf"(?<![a-z0-9]){re.escape(skill)}(?![a-z0-9])"
+    return re.search(pattern, text, flags=re.IGNORECASE) is not None
 
 
 def extract_skills(text: str) -> list[str]:
-    lowered = text.lower()
-    found = [skill for skill in KNOWN_SKILLS if skill in lowered]
-    # keep unique, longer phrases first already listed
-    seen: set[str] = set()
-    ordered: list[str] = []
-    for skill in found:
-        if skill not in seen:
-            seen.add(skill)
-            ordered.append(skill)
-    return ordered
+    # Preserve catalog order so the UI and reports remain deterministic.
+    return [skill for skill in KNOWN_SKILLS if _contains_skill(text, skill)]
 
 
 def score_resume(parsed: ParsedResume) -> ScoreBreakdown:
@@ -54,7 +56,7 @@ def score_resume(parsed: ParsedResume) -> ScoreBreakdown:
     if parsed.sections.get("summary"):
         contact_pts += 15
     else:
-        notes.append("Add a 3–4 line professional summary.")
+        notes.append("Add a 3-4 line professional summary.")
     if parsed.sections.get("skills") or extract_skills(parsed.raw_text):
         contact_pts += 15
     else:
@@ -65,7 +67,7 @@ def score_resume(parsed: ParsedResume) -> ScoreBreakdown:
     if parsed.page_count <= 2:
         ats += 15
     else:
-        notes.append("Keep the resume to 1–2 pages for most roles.")
+        notes.append("Keep the resume to 1-2 pages for most roles.")
         ats -= 10
     if 350 <= parsed.word_count <= 900:
         ats += 15
@@ -99,7 +101,13 @@ def score_resume(parsed: ParsedResume) -> ScoreBreakdown:
     overall = round(0.35 * ats + 0.35 * completeness + 0.30 * impact)
     if not notes:
         notes.append("Solid structure. Tailor keywords to each job description next.")
-    return ScoreBreakdown(overall=overall, ats=ats, completeness=completeness, impact=impact, notes=notes)
+    return ScoreBreakdown(
+        overall=overall,
+        ats=ats,
+        completeness=completeness,
+        impact=impact,
+        notes=notes,
+    )
 
 
 def match_job(parsed: ParsedResume, job_description: str) -> dict:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from hashlib import sha256
 
 import streamlit as st
 
@@ -45,7 +46,7 @@ st.markdown(
 
 def build_report(parsed, scores, job_match=None) -> str:
     lines = [
-        f"# Resume analysis — {parsed.filename}",
+        f"# Resume analysis - {parsed.filename}",
         f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         "",
         f"- Overall: {scores.overall}/100",
@@ -85,13 +86,17 @@ with st.sidebar:
     )
     api_key = st.text_input("OpenAI API key", type="password").strip()
     st.caption("Optional. Enables AI rewrite, coaching, and Q&A.")
-    job_desc = st.text_area("Target job description", height=180, placeholder="Paste a JD to tailor analysis…")
+    job_desc = st.text_area(
+        "Target job description",
+        height=180,
+        placeholder="Paste a JD to tailor analysis...",
+    )
 
 st.markdown(
     """
     <div class="hero">
-      <h1>Production Resume Analyzer</h1>
-      <p>ATS scoring, skill extraction, job-fit, and recruiter-style coaching — from one upload.</p>
+      <h1>Resume Analyzer</h1>
+      <p>ATS scoring, skill extraction, job fit, and recruiter-style coaching from one upload.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -108,12 +113,13 @@ suffix = "." + uploaded.name.rsplit(".", 1)[-1].lower() if "." in uploaded.name 
 if suffix not in ALLOWED:
     st.error("Unsupported file type.")
     st.stop()
+
 data = uploaded.getvalue()
 if len(data) > MAX_BYTES:
     st.error("File is larger than 8 MB.")
     st.stop()
 
-file_id = f"{uploaded.name}-{len(data)}"
+file_id = sha256(uploaded.name.encode("utf-8") + b"\0" + data).hexdigest()
 if st.session_state.get("file_id") != file_id:
     try:
         parsed = parse_resume(uploaded.name, data)
@@ -145,10 +151,10 @@ with overview:
         st.subheader("Profile signals")
         st.write(
             {
-                "Email": parsed.email or "—",
-                "Phone": parsed.phone or "—",
-                "LinkedIn": parsed.linkedin or "—",
-                "GitHub": parsed.github or "—",
+                "Email": parsed.email or "-",
+                "Phone": parsed.phone or "-",
+                "LinkedIn": parsed.linkedin or "-",
+                "GitHub": parsed.github or "-",
                 "Pages": parsed.page_count,
                 "Words": parsed.word_count,
                 "Bullets": parsed.bullet_count,
@@ -158,7 +164,7 @@ with overview:
     with right:
         st.subheader("Priority fixes")
         for note in scores.notes:
-            st.write(f"• {note}")
+            st.write(f"- {note}")
         report = build_report(parsed, scores, job_match)
         st.download_button(
             "Download analysis report",
@@ -196,7 +202,7 @@ with match_tab:
 with coach:
     st.subheader("Rule-based recommendations")
     for note in scores.notes:
-        st.write(f"• {note}")
+        st.write(f"- {note}")
     if api_key:
         if st.button("Generate AI coaching"):
             try:

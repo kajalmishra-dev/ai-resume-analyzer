@@ -41,9 +41,9 @@ class ParsedResume:
 def extract_text(filename: str, data: bytes) -> tuple[str, int]:
     name = filename.lower()
     if name.endswith(".pdf"):
-        doc = pymupdf.open(stream=data, filetype="pdf")
-        text = "\n".join(page.get_text() for page in doc)
-        return text, doc.page_count
+        with pymupdf.open(stream=data, filetype="pdf") as doc:
+            text = "\n".join(page.get_text() for page in doc)
+            return text, doc.page_count
     if name.endswith(".docx"):
         from docx import Document
 
@@ -90,12 +90,20 @@ def parse_resume(filename: str, data: bytes) -> ParsedResume:
     if not raw_text:
         raise ValueError("No extractable text. Use a text-based file, not a scanned image.")
 
-    bullets = [ln.strip() for ln in raw_text.splitlines() if re.match(r"^[\-\u2022\*]\s+", ln.strip())]
+    bullets = [
+        ln.strip()
+        for ln in raw_text.splitlines()
+        if re.match(r"^[\-\u2022\*]\s+", ln.strip())
+    ]
     if not bullets:
         bullets = [ln.strip() for ln in raw_text.splitlines() if ln.strip().startswith("-")]
 
     quantified = sum(1 for b in bullets if re.search(r"\d", b))
-    action = sum(1 for b in bullets if any(b.lower().lstrip("-•* ").startswith(v) for v in ACTION_VERBS))
+    action = sum(
+        1
+        for b in bullets
+        if any(b.lower().lstrip("-•* ").startswith(v) for v in ACTION_VERBS)
+    )
 
     return ParsedResume(
         filename=filename,
