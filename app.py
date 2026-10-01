@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from hashlib import sha256
 
 import streamlit as st
 
@@ -113,7 +114,7 @@ if len(data) > MAX_BYTES:
     st.error("File is larger than 8 MB.")
     st.stop()
 
-file_id = f"{uploaded.name}-{len(data)}"
+file_id = sha256(data).hexdigest()
 if st.session_state.get("file_id") != file_id:
     try:
         parsed = parse_resume(uploaded.name, data)

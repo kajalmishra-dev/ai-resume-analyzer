@@ -23,7 +23,7 @@ def tokenize(text: str) -> set[str]:
 def extract_skills(text: str) -> list[str]:
     lowered = text.lower()
     found = [skill for skill in KNOWN_SKILLS if skill in lowered]
-    # keep unique, longer phrases first already listed
+    # Preserve the catalog order while removing duplicate matches.
     seen: set[str] = set()
     ordered: list[str] = []
     for skill in found:
