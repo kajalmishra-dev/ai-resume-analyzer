@@ -1,3 +1,5 @@
+import pytest
+
 from src.parser import parse_resume
 
 
@@ -30,9 +32,6 @@ def test_parse_contact_and_sections():
     assert parsed.sections.get("skills")
     assert parsed.bullet_count >= 2
     assert parsed.quantified_bullets >= 1
-
-
-import pytest
 
 
 def test_empty_file_raises():

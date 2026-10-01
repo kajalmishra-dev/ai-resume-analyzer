@@ -56,7 +56,7 @@ def score_resume(parsed: ParsedResume) -> ScoreBreakdown:
     if parsed.sections.get("summary"):
         contact_pts += 15
     else:
-        notes.append("Add a 3–4 line professional summary.")
+        notes.append("Add a 3-4 line professional summary.")
     if parsed.sections.get("skills") or extract_skills(parsed.raw_text):
         contact_pts += 15
     else:
@@ -67,7 +67,7 @@ def score_resume(parsed: ParsedResume) -> ScoreBreakdown:
     if parsed.page_count <= 2:
         ats += 15
     else:
-        notes.append("Keep the resume to 1–2 pages for most roles.")
+        notes.append("Keep the resume to 1-2 pages for most roles.")
         ats -= 10
     if 350 <= parsed.word_count <= 900:
         ats += 15

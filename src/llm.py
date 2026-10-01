@@ -12,7 +12,7 @@ def _client(api_key: str) -> ChatOpenAI:
 def rewrite_summary(api_key: str, parsed: ParsedResume, job_description: str = "") -> str:
     llm = _client(api_key)
     prompt = (
-        "Rewrite a concise professional resume summary (80–120 words) from this resume. "
+        "Rewrite a concise professional resume summary (80-120 words) from this resume. "
         "Use first-person implied (no 'I'). Be specific and ATS-friendly.\n\n"
         f"RESUME:\n{parsed.raw_text[:8000]}\n"
     )
