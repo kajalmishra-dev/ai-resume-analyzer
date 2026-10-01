@@ -41,9 +41,9 @@ class ParsedResume:
 def extract_text(filename: str, data: bytes) -> tuple[str, int]:
     name = filename.lower()
     if name.endswith(".pdf"):
-        doc = pymupdf.open(stream=data, filetype="pdf")
-        text = "\n".join(page.get_text() for page in doc)
-        return text, doc.page_count
+        with pymupdf.open(stream=data, filetype="pdf") as doc:
+            text = "\n".join(page.get_text() for page in doc)
+            return text, doc.page_count
     if name.endswith(".docx"):
         from docx import Document
 
